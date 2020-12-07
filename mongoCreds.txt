@@ -1,7 +1,0 @@
-username: atm
-password: #123#456
-
-
-db.createUser({user: "atm", "pwd": "#123#456", roles:[{"role":"readWrite", "db":"bankDB"}]})
-
-mongo --host localhost --username atm --password #123#456 --authenticationDatabase admin
