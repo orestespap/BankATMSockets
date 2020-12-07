@@ -19,4 +19,8 @@ public class Database {
     public static MongoCollection<Document> getClients(){
         return clientsCollection;
     }
+
+    public static void getWithdrawalLock(){
+
+    }
 }

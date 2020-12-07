@@ -162,11 +162,18 @@ public class Client {
 
                         boolean response = din.readBoolean();
 
-                        if (response)
-                            System.out.println(".");
+                        if (response){
+                            requestMap.clear();
+                            requestMap.put("getBalance",1);
+                            outputStream.reset(); //otherwise it will send a withdraw request to the server
+                            outputStream.writeObject(requestMap);
+                            double balance = din.readDouble();
+                            System.out.println("Amount withdrawn successfully.\nAccount balance: "+balance+" Euro");
+
+                        }
                         else
                             System.out.println("Withdrawal failed.\nPossible reasons for failure:\n1.)Bank server is down\n2.)The amount you've requested is greater than your current account balance\n3.)You've exceeded your daily withdrawal limit\n4.)This ATM's funds aren't enough\nPlease try again later.");
-
+                        Thread.sleep(5000);
                         continue;
 
                     }
