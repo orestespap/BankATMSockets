@@ -28,7 +28,7 @@ public class Server {
 
             ServerThread aWorker = new ServerThread(anActiveSocket);
             aWorker.start();
-            if (1==1)
+            if (1==2)
                 break;
         }
         System.out.println("Server is shutting down gracefully ...");
