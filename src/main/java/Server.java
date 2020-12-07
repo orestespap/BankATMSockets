@@ -1,19 +1,23 @@
 import java.net.ServerSocket;
 import java.net.Socket;
-import com.mongodb.MongoClient;
+
+import com.mongodb.*;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
+
+import javax.xml.crypto.Data;
 
 public class Server {
 
     private static final int PORT = 9999;
 
     public static void main(String[] args) throws Exception{
-        MongoClient client = new MongoClient("localhost", );
 
         ServerSocket server=new ServerSocket(PORT);
-        //passive socket exclusively listening for new connections
-
+        //passive socket exclusively listening for new connection
         System.out.println("Server is listening at port: "+PORT);
-
+        Database.connectToDatabase();
 
         while (true) {
 
