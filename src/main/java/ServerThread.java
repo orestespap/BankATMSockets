@@ -161,6 +161,7 @@ public class ServerThread extends Thread{
 
     private boolean deposit(int amount){
         try{
+
             Bson incrementBalance = inc("balance", amount);
             clientsCollection.updateOne(this.userFilter,incrementBalance);
 
@@ -169,6 +170,7 @@ public class ServerThread extends Thread{
             java.time.LocalDateTime.now().getHour()).append("minute",java.time.LocalDateTime.now().getMinute()).append("amount",amount);
 
             clientsCollection.updateOne(this.userFilter, Updates.addToSet("depositsLog",logTransaction));
+
         }
         catch (NullPointerException e){
             return false;
