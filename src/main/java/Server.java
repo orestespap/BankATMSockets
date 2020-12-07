@@ -7,12 +7,13 @@ public class Server {
     private static final int PORT = 9999;
 
     public static void main(String[] args) throws Exception{
-        MongoClient mongoClient = new MongoClient("localhost", 27017);
+        MongoClient client = new MongoClient("localhost", 27017);
 
         ServerSocket server=new ServerSocket(PORT);
         //passive socket exclusively listening for new connections
 
         System.out.println("Server is listening at port: "+PORT);
+
 
         while (true) {
 
