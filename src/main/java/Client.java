@@ -129,7 +129,7 @@ public class Client {
                         if (response) {
                             requestMap.clear();
                             requestMap.put("getBalance",1);
-                            outputStream.reset();
+                            outputStream.reset(); //otherwise it will send a deposit request to the server
                             outputStream.writeObject(requestMap);
                             double balance = din.readDouble();
                             System.out.println("Amount deposited successfully.\nAccount balance: "+balance+" Euro");
