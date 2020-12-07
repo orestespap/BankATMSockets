@@ -1,5 +1,6 @@
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 
 import javax.xml.crypto.Data;
 import java.io.DataOutputStream;
@@ -11,11 +12,15 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Updates.inc;
+
 public class ServerThread extends Thread{
 
     private Socket activeSocket;
     private static final String EXIT="EXIT";
     private static final int timeOutInMS=150000;
+    private static final int maxWith=2000; //maximum daily withdrawal limit
     private MongoCollection<Document> clientsCollection;
     private String userName;
 
@@ -98,13 +103,13 @@ public class ServerThread extends Thread{
 
     private boolean deposit(int amount){
         try{
-            double newAccountBalance= this.getAccountBalance()+amount;
+            Bson filter = eq("username", userName);
+            Bson incrementBalance = inc("balance", amount);
+            clientsCollection.updateOne(filter,incrementBalance);
         }
         catch (NullPointerException e){
             return false;
         }
         return true;
     }
-
-
 }
