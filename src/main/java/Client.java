@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 
 public class Client {
 
@@ -31,13 +32,15 @@ public class Client {
             //String requestServedBy= "| Request served by server thread: "+Thread.currentThread().getName();
             int attempts = 0;
             boolean successfulLogin = false;
+            requestContent.add(0, -1);
+            requestContent.add(1, -1);
 
             //Cardholder login phase
             while (attempts < maximumLogInAttempts) {
-                System.out.println("ATM log in page (" + (maximumLogInAttempts - attempts) + " attempts remaining):\nType in EXIT to remove card\nUsername: \n");
+                System.out.println("ATM log in page (" + (maximumLogInAttempts - attempts) + " attempts remaining):\nType in EXIT to remove card\nUsername: ");
                 username = userInputReader.readLine();
 
-                if (username.toLowerCase().equals(EXIT)) {
+                if (username.toUpperCase().equals(EXIT)) {
                     System.out.println("Removing card and exiting ...");
                     attempts = maximumLogInAttempts;
                     continue;
@@ -46,8 +49,8 @@ public class Client {
                 System.out.println("Password for " + username + ": ");
 
                 String password = userInputReader.readLine();
-                requestContent.add(0, username.toLowerCase());
-                requestContent.add(0, password);
+                requestContent.set(0, username.toLowerCase());
+                requestContent.set(1, password);
                 requestMap.put("validateCredentials", requestContent);
 
                 outputStream.writeObject(requestMap);
@@ -57,25 +60,27 @@ public class Client {
                 if (!credentialsCheck) {
                     System.out.println("Either username doesn't exit or the password you've typed is invalid...");
                     attempts += 1;
+                    outputStream.reset();
                     continue;
                 }
 
                 successfulLogin = true;
+                break;
             }
 
             if (successfulLogin) {
+                outputStream.reset();
 
-                requestMap.put("getName", username);
+                requestMap.put("getName", 1);
                 outputStream.writeObject(requestMap);
 
                 String name = din.readUTF();
                 String option = "0";
 
                 //ATM Menu
-                while (!option.equals(4)) {
+                System.out.println("Welcome " + name + "!");
+                while (!option.equals("4")) {
                     outputStream.reset(); //make sure that we send fresh and not cached data
-
-                    System.out.println("Welcome " + name + "!");
 
                     System.out.println("---OPTIONS---\n1.)See balance\n2.)Deposit\n3.)Withdrawal\n4.)Exit\nInput (1-4): ");
                     option = userInputReader.readLine();
@@ -92,10 +97,11 @@ public class Client {
 
                     requestMap.clear();
                     if (option.equals("1")) {
-                        requestMap.put("getBalance", username);
+                        requestMap.put("getBalance", 1);
                         outputStream.writeObject(requestMap);
-                        String balance = din.readUTF();
-                        System.out.println("Account balance: " + balance);
+                        Double balance = din.readDouble();
+                        System.out.println("Account balance: " + balance +" Euro");
+                        Thread.sleep(5000);
                         continue;
                     }
 
@@ -110,20 +116,27 @@ public class Client {
                             if (!depositCheck)
                                 System.out.println("Invalid input. Input must be 0 or a positive integer that's a multiple of 5.");
                         }
+                        if (depositAmount.equals("0"))
+                            continue;
 
-                        requestContent.add(0, username);
-                        requestContent.add(1, Integer.parseInt(depositAmount));
-
-                        requestMap.put("deposit", requestContent);
+                        requestMap.put("deposit", Integer.parseInt(depositAmount));
 
                         outputStream.writeObject(requestMap);
 
                         boolean response = din.readBoolean();
 
-                        if (response)
-                            System.out.println("Amount deposited successfully.");
+
+                        if (response) {
+                            requestMap.clear();
+                            requestMap.put("getBalance",1);
+                            outputStream.reset(); //otherwise it will send a deposit request to the server
+                            outputStream.writeObject(requestMap);
+                            double balance = din.readDouble();
+                            System.out.println("Amount deposited successfully.\nAccount balance: "+balance+" Euro");
+                        }
                         else
                             System.out.println("Deposit failed. Please try again later.");
+                        Thread.sleep(5000);
 
                         continue;
                     }
@@ -143,20 +156,24 @@ public class Client {
                                 System.out.println("Invalid input. Input must be 0 or a positive integer that's a multiple of either 20 or 50.");
                         }
 
-                        requestContent.add(0, username);
-                        requestContent.add(1, Integer.parseInt(withdrawalAmount));
-
-                        requestMap.put("withdraw", requestContent);
+                        requestMap.put("withdraw", Integer.parseInt(withdrawalAmount));
 
                         outputStream.writeObject(requestMap);
 
                         boolean response = din.readBoolean();
 
-                        if (response)
-                            System.out.println(".");
+                        if (response){
+                            requestMap.clear();
+                            requestMap.put("getBalance",1);
+                            outputStream.reset(); //otherwise it will send a withdraw request to the server
+                            outputStream.writeObject(requestMap);
+                            double balance = din.readDouble();
+                            System.out.println("Amount withdrawn successfully.\nAccount balance: "+balance+" Euro");
+
+                        }
                         else
                             System.out.println("Withdrawal failed.\nPossible reasons for failure:\n1.)Bank server is down\n2.)The amount you've requested is greater than your current account balance\n3.)You've exceeded your daily withdrawal limit\n4.)This ATM's funds aren't enough\nPlease try again later.");
-
+                        Thread.sleep(5000);
                         continue;
 
                     }
@@ -172,23 +189,33 @@ public class Client {
             s.close();
             }
 
-        catch(IOException e){
-                e.printStackTrace();
+        catch(IOException | InterruptedException e){
+            //e.printStackTrace();
+            System.out.println("Failed to connect to the server or thread has been interrupted ...");
         }
 
 
     }
     public static boolean depositValidation(String x){
+        int amount=0;
 
-        int amount = Integer.parseInt(x);
-
+        try {
+            amount = Integer.parseInt(x);
+        }
+        catch (NumberFormatException e){
+            return false;
+        }
         return amount==0 || (amount>0 & amount%5==0);
     }
 
     public static boolean withdrawalValidation(String x){
-
-        int amount = Integer.parseInt(x);
-
+        int amount=0;
+        try {
+            amount = Integer.parseInt(x);
+        }
+        catch (NumberFormatException e){
+            return false;
+        }
         return amount==0 || (amount>0 & (amount%20==0 || amount%50==0));
     }
 }
