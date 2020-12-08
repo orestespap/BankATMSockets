@@ -22,15 +22,13 @@ public class ServerThread extends Thread{
     private static final int timeOutInMS=150000;
     private static final int maxWith=2000; //maximum daily withdrawal limit
     private MongoCollection<Document> clientsCollection;
-    private int day, month;
+    private int day, month, year;
     private String userName;
     private Bson userFilter;
 
     public ServerThread(Socket aSocket) throws IOException {
         this.activeSocket=aSocket;
         this.clientsCollection= Database.getClients();
-        this.day=java.time.LocalDateTime.now().getDayOfMonth();
-        this.month=java.time.LocalDateTime.now().getMonthValue();
     }
 
     public void run(){
@@ -103,54 +101,70 @@ public class ServerThread extends Thread{
 
         Document client=this.clientsCollection.find(this.userFilter).first();
 
-        Document logLogin = new Document().append("day",this.day).append("month",
-        this.month).append("year", LocalDateTime.now().getYear()).append("hour",
-        LocalDateTime.now().getHour()).append("minute", LocalDateTime.now().getMinute());
+        Document logLogin = new Document().append("hour",
+        LocalDateTime.now().getHour()).append("minute",
+        LocalDateTime.now().getMinute()).append("second",
+        LocalDateTime.now().getSecond());
 
-        clientsCollection.updateOne(this.userFilter, Updates.addToSet("loginsLog",logLogin));
+        String subDocument=java.time.LocalDateTime.now().getDayOfMonth()+""+java.time.LocalDateTime.now().getMonthValue()+""+java.time.LocalDateTime.now().getYear();
+
+        clientsCollection.updateOne(this.userFilter, Updates.addToSet("loginsLog."+subDocument,logLogin));
 
         return client.get("firstName").toString()+" "+client.get("lastName");
 
     }
 
     private boolean withdraw(int amount){
+        Document client;
+
+        try {
+            client = this.clientsCollection.find(this.userFilter).first();
+        }
+        catch (NullPointerException e){
+            //e.printStackTrace();
+            return false;
+        }
+
+        if(amount>(double)client.get("balance") || amount>maxWith)
+            return false;
 
         ReentrantLock userLock = Server.getUserLock(this.userName);
-
         userLock.lock();
-
         boolean transactionSuccess = false;
 
         try{
-            double currentBalance = this.getAccountBalance();
-            Document client=this.clientsCollection.find(this.userFilter).first();
 
-            ArrayList<Object> withdrawalsLog =(ArrayList<Object>)client.get("withdrawalsLog");
+            String subDocument=java.time.LocalDateTime.now().getDayOfMonth()+""+java.time.LocalDateTime.now().getMonthValue()+""+java.time.LocalDateTime.now().getYear();
+
+            ArrayList<Object> withdrawalsLog = (ArrayList<Object>) ((Document) client.get("withdrawalsLog")).get(subDocument);
 
             int sum=0;
-            for(int i=0;i<withdrawalsLog.size();i++) {
-                Document transaction= (Document) withdrawalsLog.get(i);
-                if((int)transaction.get("day")==this.day & (int)transaction.get("month")==this.month)
+            if (withdrawalsLog!=null) // -> mongo returns 0 results because the client has not made any withdrawals on the given date
+                for(int i=0;i<withdrawalsLog.size();i++) {
+                    Document transaction= (Document) withdrawalsLog.get(i);
                     sum+=(int) transaction.get("amount");
-            }
+                }
 
             System.out.println(sum);
-            if (amount+sum<=maxWith & amount<=currentBalance) {
+            if (amount+sum<=maxWith) {
 
                 Bson incrementBalance = inc("balance", -amount);
                 clientsCollection.updateOne(this.userFilter, incrementBalance);
 
-                Document logTransaction = new Document().append("day",this.day).append("month",
-                this.month).append("year",java.time.LocalDateTime.now().getYear()).append("hour",
-                java.time.LocalDateTime.now().getHour()).append("minute",java.time.LocalDateTime.now().getMinute()).append("amount",amount);
+                Document logTransaction = new Document().append("hour",
+                java.time.LocalDateTime.now().getHour()).append("minute",
+                java.time.LocalDateTime.now().getMinute()).append("second",
+                java.time.LocalDateTime.now().getSecond()).append("amount",
+                amount);
 
-                clientsCollection.updateOne(this.userFilter, Updates.addToSet("withdrawalsLog",logTransaction));
+                clientsCollection.updateOne(this.userFilter, Updates.addToSet("withdrawalsLog."+subDocument,logTransaction));
 
                 transactionSuccess=true;
             }
 
         }
-        catch (NullPointerException e){
+        catch (Exception e){
+            e.printStackTrace();
             return false;
         }
         finally {
@@ -165,11 +179,15 @@ public class ServerThread extends Thread{
             Bson incrementBalance = inc("balance", amount);
             clientsCollection.updateOne(this.userFilter,incrementBalance);
 
-            Document logTransaction = new Document().append("day",this.day).append("month",
-            this.month).append("year",java.time.LocalDateTime.now().getYear()).append("hour",
-            java.time.LocalDateTime.now().getHour()).append("minute",java.time.LocalDateTime.now().getMinute()).append("amount",amount);
+            String subDocument=java.time.LocalDateTime.now().getDayOfMonth()+""+java.time.LocalDateTime.now().getMonthValue()+""+java.time.LocalDateTime.now().getYear();
 
-            clientsCollection.updateOne(this.userFilter, Updates.addToSet("depositsLog",logTransaction));
+            Document logTransaction = new Document().append("hour",
+            java.time.LocalDateTime.now().getHour()).append("minute",
+            java.time.LocalDateTime.now().getMinute()).append("second",
+            java.time.LocalDateTime.now().getSecond()).append("amount",
+            amount);
+
+            clientsCollection.updateOne(this.userFilter, Updates.addToSet("depositsLog."+subDocument,logTransaction));
 
         }
         catch (NullPointerException e){

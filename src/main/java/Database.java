@@ -20,4 +20,15 @@ public class Database {
         return clientsCollection;
     }
 
+
+    //Database schema (fields):
+    //username
+    //password
+    //firstName
+    //lastName
+    //phoneNumber
+    //email
+    //withdrawalsLog : { DDMMYYYY:[{hour: XX, minute: YY, second: ZZ, amount: INTEGER }, ... ], DDMMYYYY: [  ], ...}
+    //depositsLog : { DDMMYYYY:[{hour: XX, minute: YY, second: ZZ, amount: INTEGER }, ... ], DDMMYYYY: [  ], ...}
+    //loginsLog : { DDMMYYYY:[{hour: XX, minute: YYm second: ZZ}, ... ], DDMMYYYY: [  ], ...}
 }

@@ -133,10 +133,10 @@ public class Client {
                             outputStream.writeObject(requestMap);
                             double balance = din.readDouble();
                             System.out.println("Amount deposited successfully.\nAccount balance: "+balance+" Euro");
-                            Thread.sleep(5000);
                         }
                         else
                             System.out.println("Deposit failed. Please try again later.");
+                        Thread.sleep(5000);
 
                         continue;
                     }
