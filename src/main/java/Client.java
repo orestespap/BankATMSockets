@@ -21,6 +21,8 @@ public class Client {
 
     public static void main(String[] args) {
 
+        //TEST!
+
         try {
             Socket s = new Socket(HOST, PORT);
             System.out.println("Successfully connected to server\n");

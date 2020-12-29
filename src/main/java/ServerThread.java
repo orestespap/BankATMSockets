@@ -116,7 +116,6 @@ public class ServerThread extends Thread{
 
     private boolean withdraw(int amount){
         Document client;
-
         try {
             client = this.clientsCollection.find(this.userFilter).first();
         }
@@ -128,7 +127,7 @@ public class ServerThread extends Thread{
         if(amount>(double)client.get("balance") || amount>maxWith)
             return false;
 
-        ReentrantLock userLock = Server.getUserLock(this.userName);
+        ReentrantLock userLock = Server.getUserLock(this.userName);;
         userLock.lock();
         boolean transactionSuccess = false;
 

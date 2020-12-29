@@ -46,8 +46,6 @@ public class Server {
             Socket anActiveSocket=server.accept();
             //active sockets handling communication with established connections
             //which corresponds to clients using the bank's ATM machines
-            //each tcp connection is associated with a unique socket address
-            //(remote address, remote port, local address, local port, protocol type: tcp)
 
             System.out.println("Client with address "+anActiveSocket.getInetAddress()+" has connected ...");
 
