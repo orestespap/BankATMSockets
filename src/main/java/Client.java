@@ -1,41 +1,26 @@
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
-import java.util.ArrayList;
+import java.rmi.NotBoundException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Locale;
 
 public class Client {
 
-    private static final String HOST = "localhost";
-    private static final int PORT = 9999;
     private static final String EXIT="EXIT";
-    private static ArrayList<Object> requestContent= new ArrayList<Object>();
-    private static HashMap<String, Object> requestMap = new HashMap<String, Object>();
     private static final int maximumLogInAttempts= 3;
     private static String username;
 
     public static void main(String[] args) {
 
-        //TEST!
-
         try {
-            Socket s = new Socket(HOST, PORT);
-            System.out.println("Successfully connected to server\n");
-
-            DataInputStream din = new DataInputStream(s.getInputStream());
-            ObjectOutputStream outputStream = new ObjectOutputStream(s.getOutputStream());
+            Registry registry = LocateRegistry.getRegistry("localhost",7070);
+            WorkerInter worker = (WorkerInter) registry.lookup("Worker");
             BufferedReader userInputReader = new BufferedReader(new InputStreamReader(System.in));
 
-            //String requestServedBy= "| Request served by server thread: "+Thread.currentThread().getName();
             int attempts = 0;
             boolean successfulLogin = false;
-            requestContent.add(0, -1);
-            requestContent.add(1, -1);
 
             //Cardholder login phase
             while (attempts < maximumLogInAttempts) {
@@ -51,38 +36,26 @@ public class Client {
                 System.out.println("Password for " + username + ": ");
 
                 String password = userInputReader.readLine();
-                requestContent.set(0, username.toLowerCase());
-                requestContent.set(1, password);
-                requestMap.put("validateCredentials", requestContent);
 
-                outputStream.writeObject(requestMap);
-                boolean credentialsCheck = din.readBoolean();
-                requestMap.clear();
+                boolean credentialsCheck = worker.validateCredentials(username,password);
 
                 if (!credentialsCheck) {
                     System.out.println("Either username doesn't exit or the password you've typed is invalid...");
                     attempts += 1;
-                    outputStream.reset();
                     continue;
                 }
-
                 successfulLogin = true;
                 break;
             }
 
             if (successfulLogin) {
-                outputStream.reset();
 
-                requestMap.put("getName", 1);
-                outputStream.writeObject(requestMap);
-
-                String name = din.readUTF();
+                String name = worker.getClientName();
                 String option = "0";
 
                 //ATM Menu
                 System.out.println("Welcome " + name + "!");
                 while (!option.equals("4")) {
-                    outputStream.reset(); //make sure that we send fresh and not cached data
 
                     System.out.println("---OPTIONS---\n1.)See balance\n2.)Deposit\n3.)Withdrawal\n4.)Exit\nInput (1-4): ");
                     option = userInputReader.readLine();
@@ -97,11 +70,8 @@ public class Client {
                         continue;
                     }
 
-                    requestMap.clear();
                     if (option.equals("1")) {
-                        requestMap.put("getBalance", 1);
-                        outputStream.writeObject(requestMap);
-                        Double balance = din.readDouble();
+                        Double balance = worker.getAccountBalance();
                         System.out.println("Account balance: " + balance +" Euro");
                         Thread.sleep(5000);
                         continue;
@@ -121,19 +91,10 @@ public class Client {
                         if (depositAmount.equals("0"))
                             continue;
 
-                        requestMap.put("deposit", Integer.parseInt(depositAmount));
-
-                        outputStream.writeObject(requestMap);
-
-                        boolean response = din.readBoolean();
-
+                        boolean response = worker.deposit(Integer.parseInt(depositAmount));
 
                         if (response) {
-                            requestMap.clear();
-                            requestMap.put("getBalance",1);
-                            outputStream.reset(); //otherwise it will send a deposit request to the server
-                            outputStream.writeObject(requestMap);
-                            double balance = din.readDouble();
+                            double balance = worker.getAccountBalance();
                             System.out.println("Amount deposited successfully.\nAccount balance: "+balance+" Euro");
                         }
                         else
@@ -158,18 +119,10 @@ public class Client {
                                 System.out.println("Invalid input. Input must be 0 or a positive integer that's a multiple of either 20 or 50.");
                         }
 
-                        requestMap.put("withdraw", Integer.parseInt(withdrawalAmount));
-
-                        outputStream.writeObject(requestMap);
-
-                        boolean response = din.readBoolean();
+                        boolean response = worker.withdraw(Integer.parseInt(withdrawalAmount));
 
                         if (response){
-                            requestMap.clear();
-                            requestMap.put("getBalance",1);
-                            outputStream.reset(); //otherwise it will send a withdraw request to the server
-                            outputStream.writeObject(requestMap);
-                            double balance = din.readDouble();
+                            double balance = worker.getAccountBalance();
                             System.out.println("Amount withdrawn successfully.\nAccount balance: "+balance+" Euro");
 
                         }
@@ -184,16 +137,12 @@ public class Client {
             else
                 System.out.println("Exiting ...");
 
-
-            din.close();
-            outputStream.close();
             userInputReader.close();
-            s.close();
             }
 
-        catch(IOException | InterruptedException e){
+        catch(IOException | InterruptedException | NotBoundException e){
             //e.printStackTrace();
-            System.out.println("Failed to connect to the server or thread has been interrupted ...");
+            System.out.println("Failed to connect to the server ...");
         }
 
 

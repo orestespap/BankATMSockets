@@ -1,6 +1,6 @@
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.locks.ReentrantLock;
@@ -10,17 +10,9 @@ import org.bson.Document;
 
 public class Server {
 
-    private static final int PORT = 9999;
-    private static HashMap<String, ReentrantLock> userLocks =  new HashMap<String, ReentrantLock>();;
-
     public static void main(String[] args) throws IOException {
 
-
-        ServerSocket server=new ServerSocket(PORT);
-        //passive socket exclusively listening for new connection
-        System.out.println("Server is listening at port: "+PORT);
         Database.connectToDatabase();
-
         MongoCollection<Document> clientsCollection= Database.getClients();
         FindIterable<Document> allUsers=clientsCollection.find();
 
@@ -34,31 +26,19 @@ public class Server {
         //and luck, a client would have been able to withdraw (once, before depositing money again) more money than his/her account has. As aforementioned,
         //locks are personal, so one client trying to withdraw money won't block a different client from withdrawing money at the same time.
 
+        HashMap<String, ReentrantLock> userLocks =  new HashMap<String, ReentrantLock>();
+
         while (it.hasNext()) {
             Document client = (Document) it.next();
             userLocks.put((String) client.get("username"), new ReentrantLock());
         }
 
-        while (true) {
+        WorkerInter atmf = new WorkerImpl(userLocks);
+        Registry registry = LocateRegistry.getRegistry("localhost",7070);
+        registry.rebind("Worker",atmf);
+        //adds ATM Functions server to the RMI Registry
 
-            System.out.println("Main thread is waiting for clients ...");
-
-            Socket anActiveSocket=server.accept();
-            //active sockets handling communication with established connections
-            //which corresponds to clients using the bank's ATM machines
-
-            System.out.println("Client with address "+anActiveSocket.getInetAddress()+" has connected ...");
-
-            ServerThread aWorker = new ServerThread(anActiveSocket);
-            aWorker.start();
-        }
-        //System.out.println("Server is shutting down gracefully ...");
-        //server.close();
-
-    }
-
-    public static ReentrantLock getUserLock(String username){
-        return userLocks.get(username);
+        System.out.println("Added ATM Function to RMI Registry located @ localhost:7070");
     }
 
 }

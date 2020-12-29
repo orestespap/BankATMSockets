@@ -5,11 +5,10 @@ import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 
 public class Database {
-    private static MongoDatabase bankDB;
     private static MongoCollection<Document> clientsCollection;
 
     public static void connectToDatabase(){
-        MongoClientURI uri = new MongoClientURI("");
+        MongoClientURI uri = new MongoClientURI("mongodb://");
         MongoClient mongoClient = new MongoClient(uri);
         MongoDatabase bankDB = mongoClient.getDatabase("bankDB");
         clientsCollection = bankDB.getCollection("clients");
@@ -19,16 +18,16 @@ public class Database {
     public static MongoCollection<Document> getClients(){
         return clientsCollection;
     }
-
-
-    //Database schema (fields):
-    //username
-    //password
-    //firstName
-    //lastName
-    //phoneNumber
-    //email
-    //withdrawalsLog : { DDMMYYYY:[{hour: XX, minute: YY, second: ZZ, amount: INTEGER }, ... ], DDMMYYYY: [  ], ...}
-    //depositsLog : { DDMMYYYY:[{hour: XX, minute: YY, second: ZZ, amount: INTEGER }, ... ], DDMMYYYY: [  ], ...}
-    //loginsLog : { DDMMYYYY:[{hour: XX, minute: YYm second: ZZ}, ... ], DDMMYYYY: [  ], ...}
 }
+
+
+//Database schema (fields):
+//username
+//password
+//firstName
+//lastName
+//phoneNumber
+//email
+//withdrawalsLog : { DDMMYYYY:[{hour: XX, minute: YY, second: ZZ, amount: INTEGER }, ... ], DDMMYYYY: [  ], ...}
+//depositsLog : { DDMMYYYY:[{hour: XX, minute: YY, second: ZZ, amount: INTEGER }, ... ], DDMMYYYY: [  ], ...}
+//loginsLog : { DDMMYYYY:[{hour: XX, minute: YYm second: ZZ}, ... ], DDMMYYYY: [  ], ...}

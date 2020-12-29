@@ -2,85 +2,29 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.Updates;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.net.Socket;
-import java.net.SocketException;
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
-
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Updates.inc;
 
-public class ServerThread extends Thread{
-
-    private Socket activeSocket;
-    private static final String EXIT="EXIT";
-    private static final int timeOutInMS=150000;
+public class WorkerImpl extends UnicastRemoteObject implements WorkerInter {
     private static final int maxWith=2000; //maximum daily withdrawal limit
     private MongoCollection<Document> clientsCollection;
-    private int day, month, year;
     private String userName;
     private Bson userFilter;
+    private static HashMap<String, ReentrantLock> userLocks;
 
-    public ServerThread(Socket aSocket) throws IOException {
-        this.activeSocket=aSocket;
+    public WorkerImpl(HashMap<String, ReentrantLock> locks) throws RemoteException {
+        super();
         this.clientsCollection= Database.getClients();
+        WorkerImpl.userLocks=locks;
     }
 
-    public void run(){
-
-        try {
-            this.activeSocket.setSoTimeout(timeOutInMS);
-            ObjectInputStream inputStream=new ObjectInputStream(this.activeSocket.getInputStream()); //data input stream from client
-            DataOutputStream outputStream=new DataOutputStream(this.activeSocket.getOutputStream()); //data output stream to client.
-
-            while (true){
-
-                HashMap<String, Object> request= (HashMap<String, Object>) inputStream.readObject();
-
-                if (request.keySet().contains("validateCredentials")) {
-                    ArrayList<Object> items = (ArrayList<Object>) request.get("validateCredentials");
-                    outputStream.writeBoolean(validateCredentials((String) items.get(0), (String) items.get(1)));
-                    continue;
-                }
-
-                if (request.keySet().contains("getBalance")){
-                    outputStream.writeDouble(this.getAccountBalance());
-                    continue;
-                }
-
-                if (request.keySet().contains("deposit")){
-                    int amountToDeposit= (int) request.get("deposit");
-                    outputStream.writeBoolean(this.deposit(amountToDeposit));
-                    continue;
-                }
-                if (request.keySet().contains("withdraw")){
-                    int amountToDeposit= (int) request.get("withdraw");
-                    outputStream.writeBoolean(this.withdraw(amountToDeposit));
-                    continue;
-                }
-
-                if (request.keySet().contains("getName")){
-                    outputStream.writeUTF(this.getClientName());
-                    continue;
-                }
-            }
-
-        }
-        catch (SocketException socketException) {
-            socketException.printStackTrace();
-        } catch (IOException ioException) {
-            ioException.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private boolean validateCredentials(String username, String password){
+    public boolean validateCredentials(String username, String password){
         Document client = this.clientsCollection.find(new Document("username", username)).first();
         try{
             this.userFilter=eq("username", client.get("username"));
@@ -93,11 +37,11 @@ public class ServerThread extends Thread{
         }
     }
 
-    private double getAccountBalance(){
+    public double getAccountBalance(){
         return (double) this.clientsCollection.find(this.userFilter).first().get("balance");
     }
 
-    private String getClientName(){
+    public String getClientName(){
 
         Document client=this.clientsCollection.find(this.userFilter).first();
 
@@ -114,7 +58,10 @@ public class ServerThread extends Thread{
 
     }
 
-    private boolean withdraw(int amount){
+    public boolean withdraw(int amount){
+
+        ReentrantLock userLock = WorkerImpl.getUserLock(this.userName);
+        userLock.lock();
         Document client;
         try {
             client = this.clientsCollection.find(this.userFilter).first();
@@ -127,14 +74,11 @@ public class ServerThread extends Thread{
         if(amount>(double)client.get("balance") || amount>maxWith)
             return false;
 
-        ReentrantLock userLock = Server.getUserLock(this.userName);;
-        userLock.lock();
         boolean transactionSuccess = false;
 
         try{
 
             String subDocument=java.time.LocalDateTime.now().getDayOfMonth()+""+java.time.LocalDateTime.now().getMonthValue()+""+java.time.LocalDateTime.now().getYear();
-
             ArrayList<Object> withdrawalsLog = (ArrayList<Object>) ((Document) client.get("withdrawalsLog")).get(subDocument);
 
             int sum=0;
@@ -144,7 +88,7 @@ public class ServerThread extends Thread{
                     sum+=(int) transaction.get("amount");
                 }
 
-            System.out.println(sum);
+            //System.out.println(sum);
             if (amount+sum<=maxWith) {
 
                 Bson incrementBalance = inc("balance", -amount);
@@ -172,7 +116,7 @@ public class ServerThread extends Thread{
         return transactionSuccess;
     }
 
-    private boolean deposit(int amount){
+    public boolean deposit(int amount){
         try{
 
             Bson incrementBalance = inc("balance", amount);
@@ -187,11 +131,14 @@ public class ServerThread extends Thread{
             amount);
 
             clientsCollection.updateOne(this.userFilter, Updates.addToSet("depositsLog."+subDocument,logTransaction));
-
         }
         catch (NullPointerException e){
             return false;
         }
         return true;
+    }
+
+    private static ReentrantLock getUserLock(String username){
+        return WorkerImpl.userLocks.get(username);
     }
 }
