@@ -16,7 +16,7 @@ public class Client {
 
         try {
             Registry registry = LocateRegistry.getRegistry("localhost",7070);
-            WorkerInter worker = (WorkerInter) registry.lookup("Worker");
+            WorkerInter stub = (WorkerInter) registry.lookup("Worker");
             BufferedReader userInputReader = new BufferedReader(new InputStreamReader(System.in));
 
             int attempts = 0;
@@ -37,7 +37,7 @@ public class Client {
 
                 String password = userInputReader.readLine();
 
-                boolean credentialsCheck = worker.validateCredentials(username,password);
+                boolean credentialsCheck = stub.validateCredentials(username,password);
 
                 if (!credentialsCheck) {
                     System.out.println("Either username doesn't exit or the password you've typed is invalid...");
@@ -50,7 +50,7 @@ public class Client {
 
             if (successfulLogin) {
 
-                String name = worker.getClientName();
+                String name = stub.getClientName(username);
                 String option = "0";
 
                 //ATM Menu
@@ -71,7 +71,7 @@ public class Client {
                     }
 
                     if (option.equals("1")) {
-                        Double balance = worker.getAccountBalance();
+                        Double balance = stub.getAccountBalance(username);
                         System.out.println("Account balance: " + balance +" Euro");
                         Thread.sleep(5000);
                         continue;
@@ -91,10 +91,10 @@ public class Client {
                         if (depositAmount.equals("0"))
                             continue;
 
-                        boolean response = worker.deposit(Integer.parseInt(depositAmount));
+                        boolean response = stub.deposit(username,Integer.parseInt(depositAmount));
 
                         if (response) {
-                            double balance = worker.getAccountBalance();
+                            double balance = stub.getAccountBalance(username);
                             System.out.println("Amount deposited successfully.\nAccount balance: "+balance+" Euro");
                         }
                         else
@@ -119,10 +119,10 @@ public class Client {
                                 System.out.println("Invalid input. Input must be 0 or a positive integer that's a multiple of either 20 or 50.");
                         }
 
-                        boolean response = worker.withdraw(Integer.parseInt(withdrawalAmount));
+                        boolean response = stub.withdraw(username,Integer.parseInt(withdrawalAmount));
 
                         if (response){
-                            double balance = worker.getAccountBalance();
+                            double balance = stub.getAccountBalance(username);
                             System.out.println("Amount withdrawn successfully.\nAccount balance: "+balance+" Euro");
 
                         }

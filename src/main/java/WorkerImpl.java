@@ -14,8 +14,6 @@ import static com.mongodb.client.model.Updates.inc;
 public class WorkerImpl extends UnicastRemoteObject implements WorkerInter {
     private static final int maxWith=2000; //maximum daily withdrawal limit
     private MongoCollection<Document> clientsCollection;
-    private String userName;
-    private Bson userFilter;
     private static HashMap<String, ReentrantLock> userLocks;
 
     public WorkerImpl(HashMap<String, ReentrantLock> locks) throws RemoteException {
@@ -27,8 +25,6 @@ public class WorkerImpl extends UnicastRemoteObject implements WorkerInter {
     public boolean validateCredentials(String username, String password){
         Document client = this.clientsCollection.find(new Document("username", username)).first();
         try{
-            this.userFilter=eq("username", client.get("username"));
-            this.userName=username;
             return client.get("password").equals(password);
         }
         catch (NullPointerException e){
@@ -37,13 +33,14 @@ public class WorkerImpl extends UnicastRemoteObject implements WorkerInter {
         }
     }
 
-    public double getAccountBalance(){
-        return (double) this.clientsCollection.find(this.userFilter).first().get("balance");
+    public double getAccountBalance(String username){
+        //System.out.println(Thread.currentThread()); //for testing purposes
+        return (double) this.clientsCollection.find(eq("username",username)).first().get("balance");
     }
 
-    public String getClientName(){
+    public String getClientName(String username){
 
-        Document client=this.clientsCollection.find(this.userFilter).first();
+        Document client=this.clientsCollection.find(eq("username",username)).first();
 
         Document logLogin = new Document().append("hour",
         LocalDateTime.now().getHour()).append("minute",
@@ -52,22 +49,22 @@ public class WorkerImpl extends UnicastRemoteObject implements WorkerInter {
 
         String subDocument=java.time.LocalDateTime.now().getDayOfMonth()+""+java.time.LocalDateTime.now().getMonthValue()+""+java.time.LocalDateTime.now().getYear();
 
-        clientsCollection.updateOne(this.userFilter, Updates.addToSet("loginsLog."+subDocument,logLogin));
+        clientsCollection.updateOne(eq("username",username), Updates.addToSet("loginsLog."+subDocument,logLogin));
 
         return client.get("firstName").toString()+" "+client.get("lastName");
 
     }
 
-    public boolean withdraw(int amount){
+    public boolean withdraw(String username, int amount){
 
-        ReentrantLock userLock = WorkerImpl.getUserLock(this.userName);
+        ReentrantLock userLock = WorkerImpl.getUserLock(username);
         userLock.lock();
         Document client;
         try {
-            client = this.clientsCollection.find(this.userFilter).first();
+            client = this.clientsCollection.find(eq("username",username)).first();
         }
         catch (NullPointerException e){
-            //e.printStackTrace();
+            //e.printStackTrace(); //for testing purposes
             return false;
         }
 
@@ -88,11 +85,11 @@ public class WorkerImpl extends UnicastRemoteObject implements WorkerInter {
                     sum+=(int) transaction.get("amount");
                 }
 
-            //System.out.println(sum);
+            //System.out.println(sum); //for testing purposes
             if (amount+sum<=maxWith) {
 
                 Bson incrementBalance = inc("balance", -amount);
-                clientsCollection.updateOne(this.userFilter, incrementBalance);
+                clientsCollection.updateOne(eq("username",username), incrementBalance);
 
                 Document logTransaction = new Document().append("hour",
                 java.time.LocalDateTime.now().getHour()).append("minute",
@@ -100,7 +97,7 @@ public class WorkerImpl extends UnicastRemoteObject implements WorkerInter {
                 java.time.LocalDateTime.now().getSecond()).append("amount",
                 amount);
 
-                clientsCollection.updateOne(this.userFilter, Updates.addToSet("withdrawalsLog."+subDocument,logTransaction));
+                clientsCollection.updateOne(eq("username",username), Updates.addToSet("withdrawalsLog."+subDocument,logTransaction));
 
                 transactionSuccess=true;
             }
@@ -116,11 +113,11 @@ public class WorkerImpl extends UnicastRemoteObject implements WorkerInter {
         return transactionSuccess;
     }
 
-    public boolean deposit(int amount){
+    public boolean deposit(String username, int amount){
         try{
 
             Bson incrementBalance = inc("balance", amount);
-            clientsCollection.updateOne(this.userFilter,incrementBalance);
+            clientsCollection.updateOne(eq("username",username),incrementBalance);
 
             String subDocument=java.time.LocalDateTime.now().getDayOfMonth()+""+java.time.LocalDateTime.now().getMonthValue()+""+java.time.LocalDateTime.now().getYear();
 
@@ -130,7 +127,7 @@ public class WorkerImpl extends UnicastRemoteObject implements WorkerInter {
             java.time.LocalDateTime.now().getSecond()).append("amount",
             amount);
 
-            clientsCollection.updateOne(this.userFilter, Updates.addToSet("depositsLog."+subDocument,logTransaction));
+            clientsCollection.updateOne(eq("username",username), Updates.addToSet("depositsLog."+subDocument,logTransaction));
         }
         catch (NullPointerException e){
             return false;
