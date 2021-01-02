@@ -17,6 +17,7 @@ public class Client {
         try {
             Registry registry = LocateRegistry.getRegistry("localhost",7070);
             WorkerInter stub = (WorkerInter) registry.lookup("Worker");
+            //System.out.println(stub.hashCode());
             BufferedReader userInputReader = new BufferedReader(new InputStreamReader(System.in));
 
             int attempts = 0;

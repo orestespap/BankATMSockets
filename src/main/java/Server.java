@@ -34,6 +34,7 @@ public class Server {
         }
 
         WorkerInter stub = new WorkerImpl(userLocks);
+        //System.out.println(stub.hashCode());
         //https://docs.oracle.com/javase/1.5.0/docs/guide/rmi/hello/hello-world.html
 
         //The static method UnicastRemoteObject.exportObject exports the supplied remote object to receive incoming remote method
@@ -51,7 +52,10 @@ public class Server {
 
         //Much like a client asking for the stub from the registry, the registry needs the .class files of
         //all the remote interfaces implemented by the stub that we are sending to it, in order for it 
-        //unmarshall the stub and then proceed with binding it with a physical name. 
+        //to reconstruct the stub object (which is an instance of a proxy class that implements the remote
+        //interfaces implemented by the actual object that lives in the server and stores the object reference 
+        //and rmi server socket information for the given remote object, which in our case is WorkerImpl),
+        //and then proceed with binding it with a physical name. 
 
         
         registry.rebind("Worker",stub);
