@@ -12,5 +12,8 @@ Current implementations:
 - Sockets
 - Java RMI
 - Google RPC
+- ZeroMQ (coming soon)
+- ZeroRPC (coming soon)
+- REST API (coming soon)
 
 The main branch features the Google RPC implementation. Feel free to check out the other branches for the rest of the implementations.
