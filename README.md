@@ -4,7 +4,12 @@ A basic multithreaded bank server respoding to requests made by the bank's ATMs 
 
 Tech stack:
 
-Java v14+
-Python v3.8+
-MongoDB (remote server)
-Google RPC
+
+
+  Java v14+
+  
+  Python v3.8+
+  
+  MongoDB (remote server)
+  
+  Google RPC
