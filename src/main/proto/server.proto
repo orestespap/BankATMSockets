@@ -1,0 +1,55 @@
+syntax = "proto3";
+option java_multiple_files = true;
+package org.bankatm.grpc;
+
+message validateCredentialsRequest {
+    string username = 1;
+    string password = 2;
+}
+
+message validateCredentialsResponse {
+    bool result = 1;
+    string clientName= 2;
+}
+
+service validateCredentialsService {
+    rpc validateCredentials(validateCredentialsRequest) returns (validateCredentialsResponse);
+}
+
+message getAccountBalanceRequest{
+    string username=1;
+}
+
+message getAccountBalanceResponse{
+    double accountBalance=1;
+}
+
+service getAccountBalanceService{
+    rpc getAccountBalance(getAccountBalanceRequest) returns (getAccountBalanceResponse);
+}
+
+message depositRequest{
+    string username=1;
+    int64 amount=2;
+}
+
+message depositResponse{
+    bool result=1;
+}
+
+service depositService{
+    rpc deposit(depositRequest) returns (depositResponse);
+}
+
+message withdrawRequest{
+    string username=1;
+    int32 amount=2;
+}
+
+message withdrawResponse{
+    bool result=1;
+}
+
+service withdrawService{
+    rpc withdraw(withdrawRequest) returns (withdrawResponse);
+}

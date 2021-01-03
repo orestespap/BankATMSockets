@@ -9,7 +9,7 @@ public class Database {
     private static MongoCollection<Document> clientsCollection;
 
     public static void connectToDatabase(){
-        MongoClientURI uri = new MongoClientURI("mongodb://");
+        MongoClientURI uri = new MongoClientURI("");
         MongoClient mongoClient = new MongoClient(uri);
         MongoDatabase bankDB = mongoClient.getDatabase("bankDB");
         clientsCollection = bankDB.getCollection("clients");
