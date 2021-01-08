@@ -11,9 +11,9 @@ import java.util.concurrent.TimeoutException;
 public class ClientThread extends Thread implements AutoCloseable {
 
     private static final String EXIT="EXIT";
-    private static ArrayList<Object> requestContent= new ArrayList<Object>();
-    private static HashMap<String, Object> requestMap = new HashMap<String, Object>();
     private static final int maximumLogInAttempts= 3;
+    private ArrayList<Object> requestContent= new ArrayList<Object>();
+    private HashMap<String, Object> requestMap = new HashMap<String, Object>();
     private String username;
     private String password;
     private String amount;
@@ -90,7 +90,7 @@ public class ClientThread extends Thread implements AutoCloseable {
                     System.out.println("---OPTIONS---\n1.)See balance\n2.)Deposit\n3.)Withdrawal\n4.)Exit\nInput (1-4): ");
 
                     Integer res= (Integer) (rand.nextInt((max+1) - min) + min);
-                    option= res.toString();
+                    option="2"; //res.toString();
                     System.out.println(option);
                     Thread.sleep(3000);
 
@@ -142,7 +142,7 @@ public class ClientThread extends Thread implements AutoCloseable {
                         }
                         else
                             System.out.println("Deposit failed. Please try again later.");
-                        Thread.sleep(55000);
+                        Thread.sleep(15000);
 
                         continue;
                     }

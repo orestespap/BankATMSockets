@@ -110,8 +110,8 @@ public class Services {
     }
 
     public static boolean deposit(String username, int amount){
-        try{
 
+        try{
             Bson incrementBalance = inc("balance", amount);
             clientsCollection.updateOne(new Document("username", username),incrementBalance);
 

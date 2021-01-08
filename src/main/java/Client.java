@@ -14,10 +14,10 @@ import java.util.concurrent.TimeoutException;
 public class Client implements AutoCloseable {
 
     private static final String EXIT="EXIT";
-    private static ArrayList<Object> requestContent= new ArrayList<Object>();
-    private static HashMap<String, Object> requestMap = new HashMap<String, Object>();
     private static final int maximumLogInAttempts= 3;
-    private static String username;
+    private ArrayList<Object> requestContent= new ArrayList<Object>();
+    private HashMap<String, Object> requestMap = new HashMap<String, Object>();
+    private String username;
     private Connection connection;
     private Channel channel;
     private String mainQueueName = "connectionQueue";
@@ -41,16 +41,16 @@ public class Client implements AutoCloseable {
 
             int attempts = 0;
             boolean successfulLogin = false;
-            requestContent.add(0, -1);
-            requestContent.add(1, -1);
+            atm.requestContent.add(0, -1);
+            atm.requestContent.add(1, -1);
 
             //Cardholder login phase
             Serializer ser = new Serializer();
             while (attempts < maximumLogInAttempts) {
                 System.out.println("ATM log in page (" + (maximumLogInAttempts - attempts) + " attempts remaining):\nType in EXIT to remove card\nUsername: ");
-                username = userInputReader.readLine();
+                atm.username = userInputReader.readLine();
 
-                if (username.toUpperCase().equals(EXIT)) {
+                if (atm.username.toUpperCase().equals(EXIT)) {
                     System.out.println("Removing card and exiting ...");
                     attempts = maximumLogInAttempts;
                     atm.channel.close();
@@ -58,16 +58,16 @@ public class Client implements AutoCloseable {
                     continue;
                 }
 
-                System.out.println("Password for " + username + ": ");
+                System.out.println("Password for " + atm.username + ": ");
 
                 String password = userInputReader.readLine();
-                requestContent.set(0, username.toLowerCase());
-                requestContent.set(1, password);
-                requestMap.put("validateCredentials", requestContent);
-                ByteArrayOutputStream out = ser.serialize(requestMap);
+                atm.requestContent.set(0, atm.username.toLowerCase());
+                atm.requestContent.set(1, password);
+                atm.requestMap.put("validateCredentials", atm.requestContent);
+                ByteArrayOutputStream out = ser.serialize(atm.requestMap);
 
                 String credentialsCheck = (String) atm.call(out);
-                requestMap.clear();
+                atm.requestMap.clear();
                 if (credentialsCheck.equals("false")) {
                     System.out.println("System.out.println(\"Either username doesn't exit or the password you've typed is invalid...\");");
                     continue;
@@ -78,8 +78,8 @@ public class Client implements AutoCloseable {
 
             if (successfulLogin) {
 
-                requestMap.put("getName", username);
-                String name = (String) atm.call(ser.serialize(requestMap));
+                atm.requestMap.put("getName", atm.username);
+                String name = (String) atm.call(ser.serialize(atm.requestMap));
                 String option = "0";
 
                 //ATM Menu
@@ -100,11 +100,11 @@ public class Client implements AutoCloseable {
                         continue;
                     }
 
-                    requestMap.clear();
+                    atm.requestMap.clear();
 
                     if (option.equals("1")) {
-                        requestMap.put("getBalance", username);
-                        String balance = (String) atm.call(ser.serialize(requestMap));
+                        atm.requestMap.put("getBalance", atm.username);
+                        String balance = (String) atm.call(ser.serialize(atm.requestMap));
                         System.out.println("Account balance: " + balance +" Euro");
                         Thread.sleep(5000);
                         continue;
@@ -125,16 +125,16 @@ public class Client implements AutoCloseable {
                             continue;
 
 
-                        requestContent.set(1, Integer.parseInt(depositAmount));
-                        requestMap.put("deposit", requestContent);
+                        atm.requestContent.set(1, Integer.parseInt(depositAmount));
+                        atm.requestMap.put("deposit", atm.requestContent);
 
-                        String response = (String) atm.call(ser.serialize(requestMap));
+                        String response = (String) atm.call(ser.serialize(atm.requestMap));
 
 
                         if (response.equals("true")) {
-                            requestMap.clear();
-                            requestMap.put("getBalance",username);
-                            String balance = (String) atm.call(ser.serialize(requestMap));
+                            atm.requestMap.clear();
+                            atm.requestMap.put("getBalance",atm.username);
+                            String balance = (String) atm.call(ser.serialize(atm.requestMap));
                             System.out.println("Amount deposited successfully.\nAccount balance: "+balance+" Euro");
                         }
                         else
@@ -159,15 +159,15 @@ public class Client implements AutoCloseable {
                                 System.out.println("Invalid input. Input must be 0 or a positive integer that's a multiple of either 20 or 50.");
                         }
 
-                        requestContent.set(1, Integer.parseInt(withdrawalAmount));
-                        requestMap.put("withdraw", requestContent);
+                        atm.requestContent.set(1, Integer.parseInt(withdrawalAmount));
+                        atm.requestMap.put("withdraw", atm.requestContent);
 
-                        String response = (String) atm.call(ser.serialize(requestMap));
+                        String response = (String) atm.call(ser.serialize(atm.requestMap));
 
                         if (response.equals("true")){
-                            requestMap.clear();
-                            requestMap.put("getBalance",username);
-                            String balance = (String) atm.call(ser.serialize(requestMap));
+                            atm.requestMap.clear();
+                            atm.requestMap.put("getBalance",atm.username);
+                            String balance = (String) atm.call(ser.serialize(atm.requestMap));
                             System.out.println("Amount withdrawn successfully.\nAccount balance: "+balance+" Euro");
                         }
                         else

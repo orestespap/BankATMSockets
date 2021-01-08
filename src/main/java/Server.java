@@ -16,7 +16,7 @@ public class Server {
     private static HashMap<String, ReentrantLock> userLocks =  new HashMap<String, ReentrantLock>();
     private static String mainQueueName = "connectionQueue";
 
-    public static void main(String[] args) throws IOException, TimeoutException {
+    public static void startServer() throws IOException, TimeoutException {
 
         Database.connectToDatabase();
         Services.setUpService();
@@ -57,6 +57,8 @@ public class Server {
                 byte[] byteArray = delivery.getBody();
 
                 ObjectInputStream is= ser.deserialize(byteArray);
+
+               ;
 
                 try {
 
