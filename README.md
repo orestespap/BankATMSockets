@@ -12,7 +12,7 @@ Current implementations:
 - Sockets
 - Java RMI
 - Google RPC
-- RabbitMQ (coming soon)
+- RabbitMQ
 - ZeroRPC (coming soon)
 - REST API (coming soon)
 
