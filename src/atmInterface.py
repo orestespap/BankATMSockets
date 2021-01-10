@@ -1,5 +1,5 @@
-from grpcClient import Client
 from time import sleep
+import zerorpc
 #import traceback
 
 def withdraw(client,username):
@@ -14,13 +14,13 @@ def withdraw(client,username):
 
 		if amount>0 and (amount%20==0 or amount%50==0):
 			try:
-				response=client.withdraw(username=username,amount=amount)
+				response=client.withdraw(username,amount)
 			except Exception as e:
 				print("Bank server is down. Please try again later.")
 				#traceback.print_exc() //for testing purposes
 				break
 
-			if response.result:
+			if response:
 				print("Amount withdrawn successfully ...")
 				viewBalace(client,username)
 			else:
@@ -43,13 +43,13 @@ def deposit(client,username):
 
 		if amount%5==0:
 			try:
-				response=client.deposit(username=username,amount=amount)
+				response=client.deposit(username,amount)
 			except Exception as e:
 				print("Bank server is down. Please try again later.")
 				#traceback.print_exc() //for testing purposes
 				break
 
-			if response.result:
+			if response:
 				print("Amount deposited successfully ...")
 				viewBalace(client,username)
 			else:
@@ -61,8 +61,8 @@ def deposit(client,username):
 
 def viewBalace(client,username):
 	try:
-		response=client.getAccountBalance(username=username)
-		print(f"Account balance: {response.accountBalance}€")
+		response=client.getAccountBalance(username)
+		print(f"Account balance: {response}€")
 		sleep(5)
 	except Exception as e:
 		print("Bank server is down. Please try again later.")
@@ -75,7 +75,13 @@ def logOut():
 
 def homepage(**kwargs):
 	 optionsDict={1:viewBalace,2:deposit,3:withdraw}
-	 print(f"Welcome {kwargs['clientName']}")
+
+	 name=kwargs["client"].getName(kwargs["username"])
+	 if not name:
+	 	print("Bank server is down. Please try again later.")
+	 	#traceback.print_exc()
+	 
+	 print(f"Welcome {name}")
 	 menu="---OPTIONS---\n1.)Account balance\n2.)Deposit\n3.)Withdraw\n4.)Log out"
 
 	 while True:
@@ -94,7 +100,14 @@ def homepage(**kwargs):
 	 	optionsDict[ans](kwargs["client"],kwargs["username"]) #calls appropriate menu function
 
 def logIn():
-	client=Client()
+	try:
+		client=zerorpc.Client(timeout=120, heartbeat=60)
+		client.connect("tcp://127.0.0.1:9999")
+		print(client.validateCredentials("orestes","123"))
+	except:
+		#exit()
+		traceback.print_exc()
+	
 	maxAttempts, attempts = 3,0
 	
 	while attempts<maxAttempts:
@@ -108,13 +121,13 @@ def logIn():
 		password=input("Password: ")
 
 		try:
-			response=client.validateCredentials(username=username,password=password)
+			response=client.validateCredentials(username,password)
 		except:
 			print("Bank server is down. Please try again later. Exiting.")
 			exit()
 
-		if response.result:
-			attempts=homepage(client=client,username=username,clientName=response.clientName)
+		if response:
+			attempts=homepage(client=client,username=username)
 		else:
 			attempts+=1
 			print("Invalid credentials. Please try again.")
