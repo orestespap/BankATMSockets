@@ -108,5 +108,5 @@ if __name__ == '__main__':
     api.add_resource(Withdraw,"/withdraw")
 
     app.run(debug=True)
-    print("Server shut down ... Shutting down mongo connection and exiting ...")
+    print("HTTP Server has been shut down ... Shutting down mongo connection and exiting ...")
     mongoClient.close()
