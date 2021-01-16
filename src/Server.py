@@ -29,9 +29,9 @@ def tokenVerification(func):
     @wraps(func)
     def inner(*args,**kwargs):
         try:
-            result=jwt.decode(request.headers["auth"],app.config["KEY"],algorithms=["HS256"],verify_exp=True)
+            jwt.decode(request.headers["auth"],app.config["KEY"],algorithms=["HS256"],verify_exp=True)
         except Exception as e:
-            #PyJWT raised token expired exception, or something else occured
+            #PyJWT raised token expired exception, or something else has occured
             abort(401)
 
         return func(*args,**kwargs)
