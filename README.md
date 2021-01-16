@@ -1,19 +1,11 @@
 # Distributed Bank ATM implementation
 
-A basic distributed bank server respoding to requests made by the bank's ATMs (clients).
+A basic distributed bank server respoding to requests made by the bank's ATMs (clients). Implemented using Python's Flask framework to create a simple yet fully function REST API.
 
 Tech stack:
-- Java w/ Maven
+- Python 3.8+
+- Flask framwork 
+- Flask-RESTful extension
 - MongoDB (remote server)
-- Python
-
-Current implementations:
-
-- Sockets
-- Java RMI
-- Google RPC
-- RabbitMQ RPC
-- ZeroRPC
-- REST API (coming soon)
 
 The master branch features the Google RPC implementation. Feel free to check out the other branches for the rest of the implementations.
