@@ -1,6 +1,6 @@
 # Distributed Bank ATM implementation
 
-A basic distributed bank server respoding to requests made by the bank's ATMs (clients). Implemented using Python's Flask framework to create a simple yet fully function REST API.
+A basic distributed bank server respoding to requests made by the bank's ATMs (clients). Implemented using Python's Flask framework to create a simple yet fully functional RESTful API.
 
 Tech stack:
 - Python 3.8+
