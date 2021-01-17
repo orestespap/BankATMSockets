@@ -15,5 +15,6 @@ Current implementations:
 - RabbitMQ RPC
 - ZeroRPC
 - RESTful API
+- SOAP
 
 The master branch features the Google RPC implementation. Feel free to check out the other branches for the rest of the implementations.
