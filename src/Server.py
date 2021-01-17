@@ -39,30 +39,31 @@ def tokenVerification(func):
 
 
 class Validation(Resource):
-    myService=bankServices.validateCredentials
-    parser=reqparse.RequestParser()
-    parser.add_argument("username",type=str, help="Client's username value needed",required=True)
-    parser.add_argument("password",type=str, help="Client's password value needed",required=True)
-    
-    def post(self):
-        requestArgs=Validation.parser.parse_args()
-        result=Validation.myService(requestArgs["username"],requestArgs["password"])
-        if not result:
-            abort(401) #authentication failed
-        else:
-            token = jwt.encode({"user": requestArgs["username"], "exp":datetime.datetime.utcnow()+datetime.timedelta(minutes=4)}, app.config["KEY"], algorithm="HS256")
-            return {"message":token}
+	myService=bankServices.validateCredentials
+	parser=reqparse.RequestParser()
+	parser.add_argument("username",type=str, help="Client's username value needed",required=True)
+	parser.add_argument("password",type=str, help="Client's password value needed",required=True)
+	parser.add_argument('User-Agent', location='headers')
+	
+	def post(self):
+		requestArgs=Validation.parser.parse_args()
+		result=Validation.myService(requestArgs["username"],requestArgs["password"])
+		if not result:
+			abort(401) #authentication failed
+		else:
+			token = jwt.encode({"user": requestArgs["username"], "exp":datetime.datetime.utcnow()+datetime.timedelta(minutes=4)}, app.config["KEY"], algorithm="HS256")
+			return {"message":token}
 
 
 class Fullname(Resource):
-    myService=bankServices.getName
+	myService=bankServices.getName
 
-    @tokenVerification
-    def get(self,username):
-        result=Fullname.myService(username)
-        if not result:
-            abort(404)
-        return {"message":result}
+	@tokenVerification
+	def get(self,username):
+		result=Fullname.myService(username)
+		if not result:
+			abort(404)
+		return {"message":result}
 
 class AccountBalance(Resource):
     myService=bankServices.getAccountBalance

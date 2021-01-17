@@ -71,7 +71,7 @@ class Services():
 
     def logTransaction(self,username,logName,amount=None):
         timeNow=datetime.datetime.now()
-        dateNow=datetime.datetime.now().date()
+        dateNow=timeNow.date()
         logKey=f"{dateNow.day}{dateNow.month}{dateNow.year}"
         if amount:
             self.clientsCollection.find_one_and_update({'username': username},{'$push': {f'{logName}.{logKey}': {"hour":timeNow.hour, "minute":timeNow.minute,"second":timeNow.second, "amount":amount}}})
